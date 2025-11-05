@@ -274,7 +274,24 @@ class MinerUWorkerAPI(ls.LitAPI):
         
         现在主要用于健康检查和手动触发（兼容旧接口）
         """
-        return request.get('action', 'poll')
+        # 如果 request 已经是字典，直接使用
+        if isinstance(request, dict):
+            return request.get('action', 'poll')
+        
+        # 如果是字符串，尝试解析 JSON
+        if isinstance(request, (str, bytes)):
+            try:
+                import json
+                if isinstance(request, bytes):
+                    request = request.decode('utf-8')
+                data = json.loads(request)
+                return data.get('action', 'poll')
+            except (json.JSONDecodeError, AttributeError):
+                logger.warning(f"Failed to decode request: {request}")
+                return 'poll'
+        
+        # 其他情况，返回默认值
+        return 'poll'
     
     def _get_file_type(self, file_path: str) -> str:
         """
